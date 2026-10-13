@@ -103,7 +103,8 @@ function securityPolicy(env) {
         } catch {
           res.statusCode = 404;
           res.setHeader("Content-Type", "text/html");
-          return res.end(readFileSync(resolve(server.config.root, server.config.build.outDir, "404.html")));
+          const outDir = resolve(server.config.root, server.config.build.outDir);
+          return res.end(readFileSync(resolve(outDir, existsSync(resolve(outDir, "404.html")) ? "404.html" : "index.html")));
         }
         next();
       });
@@ -113,7 +114,9 @@ function securityPolicy(env) {
 
 // Static hosts serve real files only. Copying index.html to 404.html lets
 // GitHub Pages hand deep links like /claim/0x… to the app (Netlify/Vercel:
-// add a rewrite of /* to /index.html instead).
+// add a rewrite of /* to /index.html instead). Cloudflare Pages (which sets
+// CF_PAGES=1 in its builds) skips the copy: without a 404.html it serves
+// index.html for app routes with status 200, as a single-page app.
 function spaFallback() {
   let outDir;
   return {
@@ -123,6 +126,7 @@ function spaFallback() {
       outDir = resolve(config.root, config.build.outDir);
     },
     closeBundle() {
+      if (process.env.CF_PAGES) return;
       copyFileSync(resolve(outDir, "index.html"), resolve(outDir, "404.html"));
     },
   };

@@ -33,4 +33,4 @@ export const WALLETCONNECT_PROJECT_ID = env.VITE_WALLETCONNECT_PROJECT_ID || "";
 export const GAS_ALLOWANCE = "0.005";
 
 // Public repository, linked from the footer once set.
-export const REPO_URL = "";
+export const REPO_URL = "https://github.com/SavvySID/LinkCash";

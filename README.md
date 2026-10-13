@@ -111,15 +111,41 @@ VITE_WALLETCONNECT_PROJECT_ID=your_project_id
 
 Routing uses the browser History API (no extra dependency). For hosting:
 
+- **Cloudflare Pages (recommended):** see [Deploy on Cloudflare Pages](#deploy-on-cloudflare-pages).
 - **Any static host at the domain root:** `npm run build:web` and upload `web/dist`.
 - **GitHub Pages project site:** build with `VITE_BASE=/<repo>/`. The build also writes `404.html`, a copy of `index.html`, so opening or refreshing `/claim/…` or `/links/…` works.
 - **Netlify / Vercel:** add a rewrite from `/*` to `/index.html` (real files such as `deploy.html` are still served directly).
+
+### Deploy on Cloudflare Pages
+
+Connect the GitHub repository in the Cloudflare dashboard (Workers & Pages → Create → Pages → Connect to Git) with these settings:
+
+| Setting | Value |
+|---|---|
+| Production branch | `main` |
+| Framework preset | None |
+| Root directory | `web` |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Environment variable | `NODE_VERSION` = `22` |
+
+Leave every `VITE_*` variable unset. The defaults are Arc mainnet and the deployed contract. Setting `VITE_CONTRACT_ADDRESS` to an empty string would turn payments off, and `VITE_CHAIN=local` points the site at a local test chain.
+
+The site is served from the domain root, so no base path is needed. Cloudflare sets `CF_PAGES=1` during its builds; the build then skips `404.html`, so Cloudflare serves the app for routes such as `/claim/…` with status 200. The generated `_headers` file applies the security headers to every response.
+
+After the first deploy, check the headers on a deep link (it should show the CSP with `frame-ancestors 'none'`, `X-Frame-Options: DENY` and `Referrer-Policy: no-referrer`):
+
+```bash
+curl -sI https://<project>.pages.dev/claim/0x0000000000000000000000000000000000000001
+```
+
+Leave Cloudflare Web Analytics off for the project, and if you add a custom domain, keep Rocket Loader and Email Address Obfuscation off. All three inject scripts that the Content Security Policy blocks.
 
 ### Security headers
 
 Every build puts a Content Security Policy `<meta>` tag in `index.html` and `deploy.html`, and writes `web/dist/_headers` with the full set of response headers. A `<meta>` CSP can't do everything a header can: browsers ignore `frame-ancestors` in a meta tag, so only response headers stop other sites from framing the app (clickjacking).
 
-- **Netlify and Cloudflare Pages** read `_headers` automatically: CSP with `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy` and HSTS.
+- **Cloudflare Pages and Netlify** read `_headers` automatically: CSP with `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy` and HSTS.
 - **Vercel:** copy the same headers into `vercel.json` (`headers`).
 - **GitHub Pages can't send response headers.** The meta CSP and `no-referrer` still apply, and as a fallback the app refuses to render when another site frames it, but prefer a host that supports headers.
 - `vite preview` serves the same headers, so the browser tests run under the production policy. The dev server (`npm run dev`) has no CSP, because Vite's hot reload needs inline scripts.

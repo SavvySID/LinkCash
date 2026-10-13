@@ -1,0 +1,29 @@
+node_modules/
+artifacts/
+cache/
+dist/
+.env
+.env.local
+web/dist-e2e/
+web/dist-e2e-empty/
+e2e/screenshots/
+
+# Secrets: environment files, keys, keystores, wallet backups downloaded by the claim page
+.env.*
+!.env.example
+*.pem
+*.key
+keystore/
+linkcash-wallet-*.txt
+*.keystore
+UTC--*
+keystore*.json
+*mnemonic*
+*seed-phrase*
+secret*.json
+secrets*.json
+*.secret
+deployer*.json
+
+# Third-party reference screenshots (internal design reference only)
+design-references/*.png
